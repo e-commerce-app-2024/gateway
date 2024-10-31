@@ -1,41 +1,29 @@
 package com.ecommerce.app.config;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 
 @Configuration
-@EnableWebSecurity
-@EnableMethodSecurity
-@RequiredArgsConstructor
+@EnableWebFluxSecurity
 public class SecurityConfig {
 
-    private final JwtAuthConverter jwtAuthConverter;
-
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityWebFilterChain securityFilterChain(ServerHttpSecurity serverHttpSecurity) {
 
-        http
-                .authorizeHttpRequests((requests) -> requests.anyRequest().authenticated());
+        serverHttpSecurity
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .authorizeExchange(exchange -> exchange
+                        .pathMatchers("/eureka/**").permitAll()
+                        .anyExchange().authenticated());
 
-        http
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> jwtConfigurer.jwtAuthenticationConverter(jwtAuthConverter)));
+        serverHttpSecurity
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwtConfigurer -> Customizer.withDefaults()));
 
-
-        http
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                        .maximumSessions(1)
-                        .maxSessionsPreventsLogin(true)
-                );
-
-
-        return http.build();
+        return serverHttpSecurity.build();
     }
 
 }
